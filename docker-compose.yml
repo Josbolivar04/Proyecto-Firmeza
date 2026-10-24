@@ -1,0 +1,66 @@
+﻿services:
+  # Servicio 1: Aplicación web
+  firmeza-web:
+    build:
+      context: ./Firmeza.Web
+      dockerfile: Dockerfile
+    container_name: firmeza-web
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      EPPlus__License: ${EPPLUS_LICENSE:-}
+      ConnectionStrings__DefaultConnection: "Host=aws-0-us-east-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.psjoyoibxzxwzgodfdqe;Password=FirmezaZxx.123*;SSL Mode=Require;Trust Server Certificate=true;SearchPath=firmeza;"
+    volumes:
+      - recibos:/app/wwwroot/recibos
+
+  # Servicio 2: API REST
+  firmeza-api:
+    build:
+      context: .
+      dockerfile: Firmeza.Api/Dockerfile
+    container_name: firmeza-api
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=aws-0-us-east-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.psjoyoibxzxwzgodfdqe;Password=FirmezaZxx.123*;SSL Mode=Require;Trust Server Certificate=true;SearchPath=firmeza;"
+      Jwt__Issuer: "Firmeza.Api"
+      Jwt__Audience: "Firmeza.Clients"
+      Jwt__Key: "FirmezaBolFirmezaBolFirmezaBol*."
+      Jwt__ExpirationMinutes: "60"
+      Cors__AllowedOrigins__0: ${BLAZOR_ORIGIN:-http://localhost:5173}
+      Email__Host: "smtp.gmail.com"
+      Email__Port: "587"
+      Email__User: ""
+      Email__Password: ""
+      Email__FromAddress: ""
+      Email__FromName: "Firmeza"
+      Email__EnableSsl: "true"
+      BootstrapAdmin__Email: ${ADMIN_EMAIL:-}
+      BootstrapAdmin__Password: ${ADMIN_PASSWORD:-}
+
+  # Servicio 3: Base de datos local PostgreSQL (Opcional por si deseas usarla en lugar de Supabase)
+  firmeza-db:
+    image: postgres:17-alpine
+    container_name: firmeza-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: FirmezaPassword123
+      POSTGRES_DB: FirmezaDB
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d FirmezaDB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  recibos:
+  pgdata:
